@@ -19,8 +19,29 @@ namespace conan_vs_extension
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            vcConfig.AddPropertySheet(propsFilePath);
-            vcProject.Save();
+            if (File.Exists(propsFilePath))
+            {
+                bool isAlreadyIncluded = false;
+                IVCCollection propertySheets = vcConfig.PropertySheets as IVCCollection;
+                foreach (VCPropertySheet sheet in propertySheets)
+                {
+                    if (sheet.PropertySheetFile.Equals(propsFilePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAlreadyIncluded = true;
+                        break;
+                    }
+                }
+
+                if (!isAlreadyIncluded)
+                {
+                    vcConfig.AddPropertySheet(propsFilePath);
+                    vcProject.Save();
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Properties file '{propsFilePath}' does not exist.");
+            }
         }
 
         public async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
@@ -33,8 +54,9 @@ namespace conan_vs_extension
             if (preBuildTool != null)
             {
                 string currentPreBuildEvent = preBuildTool.CommandLine;
-                if (!currentPreBuildEvent.Contains(conanCommand))
+                if (!currentPreBuildEvent.Contains("conan"))
                 {
+                    // FIXME: better do this with a script file?
                     preBuildTool.CommandLine = conanCommand + Environment.NewLine + currentPreBuildEvent;
                     vcProject.Save();
                 }
