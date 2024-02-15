@@ -24,3 +24,4 @@ jobs:
         with:
           name: conan-vs-extension.vsix
           path: bin\Release\conan-vs-extension.vsix
+          if-no-files-found: error
