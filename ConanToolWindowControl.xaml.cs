@@ -56,10 +56,10 @@ namespace conan_vs_extension
             this.InitializeComponent();
             LibraryHeader.Visibility = Visibility.Collapsed;
             myWebBrowser.Visibility = Visibility.Collapsed;
+
             _manager = new ProjectConfigurationManager();
             _ = InitializeAsync();
         }
-
 
         private async Task InitializeAsync()
         {
@@ -174,6 +174,9 @@ namespace conan_vs_extension
 
             InstallButton.Visibility = Visibility.Collapsed;
             RemoveButton.Visibility = Visibility.Visible;
+
+            // TODO: Call
+            // WriteNewRequirement(..., selectedLibrary + "/" + selectedVersion);
         }
 
         private void RemoveButton_Click(object sender, RoutedEventArgs e)
@@ -185,6 +188,9 @@ namespace conan_vs_extension
 
             InstallButton.Visibility = Visibility.Visible;
             RemoveButton.Visibility = Visibility.Collapsed;
+
+            // TODO: Call
+            // RemoveRequirement(..., selectedLibrary + "/" + selectedVersion);
         }
 
 
@@ -257,7 +263,109 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
             ThreadHelper.ThrowIfNotOnUIThread();
             _dte.ExecuteCommand("Tools.Options", GuidList.strConanOptionsPage);
         }
-        
+
+        private bool IsFileCommentGuarded(string path)
+        {
+            if (File.Exists(path))
+            {
+                string[] guardComment = _modifyCommentGuard.Split('\n');
+                string[] fileContents = File.ReadAllLines(path);
+                if (fileContents.Length > guardComment.Length && fileContents.AsSpan(0, guardComment.Length) == guardComment)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void WriteConanfileIfNecessary(string projectDirectory)
+        {
+            string path = Path.Combine(projectDirectory, "conanfile.py");
+            if (!IsFileCommentGuarded(path))
+            {
+                StreamWriter conanfileWriter = File.CreateText(path);
+                conanfileWriter.Write(_modifyCommentGuard +  "\n");
+
+                conanfileWriter.Write("from conan import ConanFile\n" +
+                    "class Package(ConanFile):\n" +
+                    "    def requirements(self):\n" +
+                    "        for req in self.conan_data.get(\"requirements\", []):\n" +
+                    "            self.requires(req)\n");
+            }
+        }
+
+        private void WriteConandataIfNecessary(string projectDirectory)
+        {
+            string path = Path.Combine(projectDirectory, "conandata.yml");
+            if (!IsFileCommentGuarded(path))
+            {
+                StreamWriter conandataWriter = File.CreateText(path);
+                conandataWriter.Write(_modifyCommentGuard + "\n");
+
+                conandataWriter.Write("requirements:\n");
+            }
+        }
+
+        private void WriteNecessaryConanGuardedFiles(string projectDirectory)
+        {
+            WriteConanfileIfNecessary(projectDirectory);
+            WriteConandataIfNecessary(projectDirectory);
+        }
+
+        private string[] GetConandataRequirements(string projectDirectory)
+        {
+            string path = Path.Combine(projectDirectory, "conandata.yml");
+            if (IsFileCommentGuarded(path))
+            {
+                string[] conandataContents = File.ReadAllLines(path);
+                // TODO: Have this parse the yaml, if we even need this file at some point
+                int firstReqLine = Array.IndexOf(conandataContents, "requirements:");
+                if (firstReqLine > 0)
+                {
+                    // var requirements = conandataContents.AsSpan(firstReqLine+1);
+                }
+            }
+            return new string[] { };
+        }
+
+        private void WriteNewRequirement(string projectDirectory, string newRequirement)
+        {
+            string path = Path.Combine(projectDirectory, "conandata.yml");
+            if (IsFileCommentGuarded(path))
+            {
+                string[] contents = File.ReadAllLines(path);
+                // TODO: Proper yaml parsing
+                string formattedRequirement = "  - " + newRequirement;
+                contents.Append(formattedRequirement);
+                if (!contents.Contains(formattedRequirement))
+                {
+                    File.WriteAllLines(path, contents);
+                }
+            }
+        }
+
+        private void RemoveRequirement(string projectDirectory, string oldRequirement)
+        {
+            string path = Path.Combine(projectDirectory, "conandata.yml");
+            if (IsFileCommentGuarded(path))
+            {
+                string[] contents = File.ReadAllLines(path);
+                // TODO: Proper yaml parsing
+                string formattedRequirement = "  - " + oldRequirement;
+                string[] newContents = new string[] { };
+
+                foreach (string line in contents)
+                {
+                    if (line != formattedRequirement)
+                    {
+                        newContents.Append(line);
+                    }
+                }
+                File.WriteAllLines(path, contents);
+            }
+        }
+
+
         private void Configuration_Click(object sender, RoutedEventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -274,6 +382,8 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
                     string projectDirectory = Path.GetDirectoryName(projectFilePath);
                     string propsFilePath = Path.Combine(projectDirectory, "conandeps.props");
                     string conanInstallCommand = $"\"{conanPath}\" install --requires=fmt/10.2.1 -g=MSBuildDeps -s=build_type=$(Configuration) --build=missing";
+
+                    WriteNecessaryConanGuardedFiles(projectDirectory);
 
                     foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
                     {

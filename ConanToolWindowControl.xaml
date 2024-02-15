@@ -25,7 +25,7 @@
         <TextBox x:Name="SearchTextBox" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="5" Height="24" TextChanged="SearchTextBox_TextChanged"/>
 
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5">
-            <Button ToolTip="Configure Conan" Click="Configuration_Click" BorderThickness="0" Background="{x:Null}">
+            <Button x:Name="ConfigureConanButton" ToolTip="Configure Conan" Click="Configuration_Click" BorderThickness="0" Background="{x:Null}">
                 <Image Source="./Resources/gear.png" Stretch="None"/>
             </Button>
             <Button ToolTip="Update package list" Click="ShowPackages_Click" BorderThickness="0" Background="{x:Null}">
