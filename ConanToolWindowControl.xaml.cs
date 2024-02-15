@@ -7,12 +7,12 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.VCProjectEngine;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using EnvDTE;
 
 
 namespace conan_vs_extension
@@ -65,7 +65,7 @@ namespace conan_vs_extension
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            _dte = ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
+            _dte = (DTE)ServiceProvider.GlobalProvider.GetService(typeof(DTE));
             if (_dte == null)
             {
                 throw new InvalidOperationException("Cannot access DTE service.");
@@ -409,8 +409,73 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
 
         }
 
+        private string getProfileName(string vcConfigName)
+        {
+            return vcConfigName.Replace("|", "_");
+        }
+
+        private string getConanArch(string platform)
+        {
+            var archMap = new Dictionary<string, string>();
+            archMap["x64"] = "x86_64";
+            archMap["Win32"] = "x86";
+            return archMap[platform];
+        }
+
+        private string getConanCompilerVersion(string platformToolset)
+        {
+            var msvcVersionMap = new Dictionary<string, string>();
+            msvcVersionMap["v143"] = "193";
+            msvcVersionMap["v142"] = "192";
+            msvcVersionMap["v141"] = "191";
+            return msvcVersionMap[platformToolset];
+        }
+
         private void ShowPackages_Click(object sender, RoutedEventArgs e)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                if (_dte != null && _dte.Solution != null && _dte.Solution.Projects != null)
+                {
+                    foreach (Project project in _dte.Solution.Projects)
+                    {
+                        if (project.Object is VCProject vcProject)
+                        {
+                            string projectDirectory = System.IO.Path.GetDirectoryName(project.FullName);
+                            string conanProjectDirectory = System.IO.Path.Combine(projectDirectory, ".conan");
+
+                            if (!Directory.Exists(conanProjectDirectory))
+                            {
+                                Directory.CreateDirectory(conanProjectDirectory);
+                            }
+
+                            foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
+                            {
+                                string profileName = getProfileName(vcConfig.Name);
+                                string profilePath = System.IO.Path.Combine(conanProjectDirectory, profileName);
+
+                                if (!File.Exists(profilePath))
+                                {
+                                    string toolset = vcConfig.Evaluate("$(PlatformToolset)").ToString();
+                                    string compilerVersion = getConanCompilerVersion(toolset);
+                                    string arch = getConanArch(vcConfig.Evaluate("$(PlatformName)").ToString());
+                                    string buildType = vcConfig.ConfigurationName;
+                                    string profileContent = $"[settings]\narch={arch}\nbuild_type={buildType}\ncompiler=msvc\ncompiler.cppstd=14\ncompiler.runtime=dynamic\n" +
+                                        $"compiler.runtime_type={buildType}\ncompiler.version={compilerVersion}\nos=Windows";
+                                    File.WriteAllText(profilePath, profileContent);
+                                }
+                            }
+                        }
+                    }
+
+                    MessageBox.Show($"Generated profiles for actual project.", "Conan profiles generated", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"There was a problem generating the file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task UpdateJsonDataAsync()
