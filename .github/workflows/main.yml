@@ -23,4 +23,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: conan-vs-extension.vsix
-          path: conan-vs-extension\bin\Release\conan-vs-extension.vsix
+          path: bin\Release\conan-vs-extension.vsix
