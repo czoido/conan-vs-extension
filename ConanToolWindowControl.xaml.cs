@@ -13,6 +13,8 @@ using System.Collections;
 using System.IO;
 using System.Reflection;
 using EnvDTE;
+using Microsoft.VisualStudio.PlatformUI;
+using Microsoft.VisualStudio.Threading;
 
 
 namespace conan_vs_extension
@@ -48,6 +50,8 @@ namespace conan_vs_extension
         private DTE _dte;
         private RootObject _jsonData;
 
+        private string _modifyCommentGuard = "# This is a Conan Plugin Managed File blah balh blhaaah";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ConanToolWindowControl"/> class.
         /// </summary>
@@ -56,6 +60,8 @@ namespace conan_vs_extension
             this.InitializeComponent();
             LibraryHeader.Visibility = Visibility.Collapsed;
             myWebBrowser.Visibility = Visibility.Collapsed;
+
+            ToggleUIEnableState(IsConanInitialized());
 
             _manager = new ProjectConfigurationManager();
             _ = InitializeAsync();
@@ -102,7 +108,7 @@ namespace conan_vs_extension
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            FilterListView(SearchTextBox.Text);
+            FilterListView(LibrarySearchTextBox.Text);
         }
 
         private async Task LoadLibrariesFromJsonAsync()
@@ -264,6 +270,12 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
             _dte.ExecuteCommand("Tools.Options", GuidList.strConanOptionsPage);
         }
 
+        private bool IsConanInitialized()
+        {
+            // TODO: What logic should go here?
+            return false;
+        }
+
         private bool IsFileCommentGuarded(string path)
         {
             if (File.Exists(path))
@@ -365,6 +377,18 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
             }
         }
 
+        private void ToggleUIEnableState(bool enabled)
+        {
+            LibrarySearchTextBox.IsEnabled = enabled;
+
+            ShowPackagesButton.IsEnabled = enabled;
+            UpdateButton.IsEnabled = enabled;
+
+            PackagesListView.IsEnabled = enabled;
+            LibraryHeader.IsEnabled = enabled;
+            myWebBrowser.IsEnabled = enabled;
+        }
+
 
         private void Configuration_Click(object sender, RoutedEventArgs e)
         {
@@ -407,6 +431,8 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
                 }
             }
 
+            ToggleUIEnableState(true);
+
         }
 
         private string getProfileName(string vcConfigName)
@@ -419,6 +445,7 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
             var archMap = new Dictionary<string, string>();
             archMap["x64"] = "x86_64";
             archMap["Win32"] = "x86";
+            archMap["ARM64"] = "armv8";
             return archMap[platform];
         }
 
