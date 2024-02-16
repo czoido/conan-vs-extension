@@ -15,7 +15,9 @@ using System.Reflection;
 using EnvDTE;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Threading;
-
+using YamlDotNet.Core;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
 
 namespace conan_vs_extension
 {
@@ -39,6 +41,19 @@ namespace conan_vs_extension
     {
         public long date { get; set; }
         public Dictionary<string, Library> libraries { get; set; }
+    }
+
+    public class Requirements
+    {
+        public Requirements(string[] requirements)
+        {
+            this.requirements = requirements;
+        }
+        public Requirements()
+        {
+            this.requirements = new string[] { };
+        }
+        public string[] requirements { get; set; }
     }
 
     /// <summary>
@@ -343,12 +358,14 @@ class ConanApplication(ConanFile):
             if (IsFileCommentGuarded(path))
             {
                 string[] conandataContents = File.ReadAllLines(path);
-                // TODO: Have this parse the yaml, if we even need this file at some point
-                int firstReqLine = Array.IndexOf(conandataContents, "requirements:");
-                if (firstReqLine > 0)
-                {
-                    // var requirements = conandataContents.AsSpan(firstReqLine+1);
-                }
+
+                var deserializer = new DeserializerBuilder()
+                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                    .Build();
+
+                var result = deserializer.Deserialize<Requirements>(string.Join("\n", conandataContents));
+
+                return result.requirements;
             }
             return new string[] { };
         }
@@ -358,13 +375,17 @@ class ConanApplication(ConanFile):
             string path = Path.Combine(projectDirectory, "conandata.yml");
             if (IsFileCommentGuarded(path))
             {
-                string[] contents = File.ReadAllLines(path);
-                // TODO: Proper yaml parsing
-                string formattedRequirement = "  - " + newRequirement;
-                contents.Append(formattedRequirement);
-                if (!contents.Contains(formattedRequirement))
+                string[] requirements = GetConandataRequirements(projectDirectory);
+                if (!requirements.Contains(newRequirement))
                 {
-                    File.WriteAllLines(path, contents);
+                    requirements.Append(newRequirement);
+                    var conandata = File.CreateText(path);
+                    conandata.Write(_modifyCommentGuard + "\n");
+                    var serializer = new SerializerBuilder()
+                        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                        .Build();
+                    var yaml = serializer.Serialize(new Requirements(requirements));
+                    conandata.Write(yaml);
                 }
             }
         }
@@ -374,19 +395,18 @@ class ConanApplication(ConanFile):
             string path = Path.Combine(projectDirectory, "conandata.yml");
             if (IsFileCommentGuarded(path))
             {
-                string[] contents = File.ReadAllLines(path);
-                // TODO: Proper yaml parsing
-                string formattedRequirement = "  - " + oldRequirement;
-                string[] newContents = new string[] { };
-
-                foreach (string line in contents)
+                string[] requirements = GetConandataRequirements(projectDirectory);
+                if (requirements.Contains(oldRequirement))
                 {
-                    if (line != formattedRequirement)
-                    {
-                        newContents.Append(line);
-                    }
+                    var newRequirements = requirements.Where(req => req != oldRequirement).ToArray();
+                    var conandata = File.CreateText(path);
+                    conandata.Write(_modifyCommentGuard + "\n");
+                    var serializer = new SerializerBuilder()
+                        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                        .Build();
+                    var yaml = serializer.Serialize(new Requirements(newRequirements));
+                    conandata.Write(yaml);
                 }
-                File.WriteAllLines(path, contents);
             }
         }
 
