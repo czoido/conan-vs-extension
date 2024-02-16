@@ -504,7 +504,7 @@ class ConanApplication(ConanFile):
                         {
                             string projectDirectory = System.IO.Path.GetDirectoryName(project.FullName);
                             string conanProjectDirectory = System.IO.Path.Combine(projectDirectory, ".conan");
-
+                            MessageBox.Show(string.Join("\n", GetConandataRequirements(projectDirectory)));
                             if (!Directory.Exists(conanProjectDirectory))
                             {
                                 Directory.CreateDirectory(conanProjectDirectory);
