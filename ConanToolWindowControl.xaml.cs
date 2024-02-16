@@ -272,8 +272,8 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
 
         private bool IsConanInitialized()
         {
-            // TODO: What logic should go here?
-            return false;
+            bool initialized = GlobalSettings.ConanExecutablePath != null && GlobalSettings.ConanExecutablePath.Length > 0;
+            return initialized;
         }
 
         private bool IsFileCommentGuarded(string path)
@@ -298,11 +298,24 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
                 StreamWriter conanfileWriter = File.CreateText(path);
                 conanfileWriter.Write(_modifyCommentGuard +  "\n");
 
-                conanfileWriter.Write("from conan import ConanFile\n" +
-                    "class Package(ConanFile):\n" +
-                    "    def requirements(self):\n" +
-                    "        for req in self.conan_data.get(\"requirements\", []):\n" +
-                    "            self.requires(req)\n");
+                conanfileWriter.Write(@"
+from conan import ConanFile
+from conan.tools.microsoft import vs_layout, MSBuildDeps
+class ConanApplication(ConanFile):
+    package_type = ""application""
+    settings = ""os"", ""compiler"", ""build_type"", ""arch""
+
+    def layout(self):
+        vs_layout(self)
+
+    def generate(self):
+        deps = MSBuildDeps(self)
+        deps.generate()
+
+    def requirements(self):
+        requirements = self.conan_data.get('requirements', [])
+        for requirement in requirements:
+            self.requires(requirement)");
             }
         }
 
