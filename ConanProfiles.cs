@@ -88,8 +88,20 @@ namespace conan_vs_extension
                             string languageStandard = generalRule == null ? null : generalRule.GetEvaluatedPropertyValue("LanguageStandard");
                             string cppStd = getConanCppstd(languageStandard);
                             string buildType = vcConfig.ConfigurationName;
-                            string profileContent = $"[settings]\narch={arch}\nbuild_type={buildType}\ncompiler=msvc\ncompiler.cppstd={cppStd}\ncompiler.runtime=dynamic\n" +
-                                $"compiler.runtime_type={buildType}\ncompiler.version={compilerVersion}\nos=Windows";
+                            string profileContent = 
+$@"
+[settings]
+arch={arch}
+build_type={buildType}
+compiler=msvc
+compiler.cppstd={cppStd}
+compiler.runtime=dynamic
+" +
+$@"
+compiler.runtime_type={buildType}
+compiler.version={compilerVersion}
+os=Windows
+";
                             File.WriteAllText(profilePath, profileContent);
                         }
                     }
