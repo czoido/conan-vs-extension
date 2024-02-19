@@ -18,6 +18,8 @@ using Microsoft.VisualStudio.Threading;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
+using VSLangProj;
+using System.Windows.Navigation;
 
 namespace conan_vs_extension
 {
@@ -196,8 +198,15 @@ namespace conan_vs_extension
             InstallButton.Visibility = Visibility.Collapsed;
             RemoveButton.Visibility = Visibility.Visible;
 
-            // TODO: Call
-            // WriteNewRequirement(..., selectedLibrary + "/" + selectedVersion);
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            Array activeSolutionProjects = _dte.ActiveSolutionProjects as Array;
+            Project activeProject = activeSolutionProjects.GetValue(0) as Project;
+
+            string projectFilePath = activeProject.FullName;
+            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+
+            WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
         }
 
         private void RemoveButton_Click(object sender, RoutedEventArgs e)
@@ -210,8 +219,15 @@ namespace conan_vs_extension
             InstallButton.Visibility = Visibility.Visible;
             RemoveButton.Visibility = Visibility.Collapsed;
 
-            // TODO: Call
-            // RemoveRequirement(..., selectedLibrary + "/" + selectedVersion);
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            Array activeSolutionProjects = _dte.ActiveSolutionProjects as Array;
+            Project activeProject = activeSolutionProjects.GetValue(0) as Project;
+
+            string projectFilePath = activeProject.FullName;
+            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+
+            RemoveRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
         }
 
 
@@ -297,7 +313,7 @@ target_link_libraries(your_target_name PRIVATE {cmakeTargetName})
             {
                 string[] guardComment = _modifyCommentGuard.Split('\n');
                 string[] fileContents = File.ReadAllLines(path);
-                if (fileContents.Length > guardComment.Length && fileContents.AsSpan(0, guardComment.Length) == guardComment)
+                if (fileContents.Length > guardComment.Length && fileContents.AsSpan(0, guardComment.Length).SequenceEqual(guardComment))
                 {
                     return true;
                 }
@@ -331,6 +347,7 @@ class ConanApplication(ConanFile):
         requirements = self.conan_data.get('requirements', [])
         for requirement in requirements:
             self.requires(requirement)");
+                conanfileWriter.Close();
             }
         }
 
@@ -343,6 +360,8 @@ class ConanApplication(ConanFile):
                 conandataWriter.Write(_modifyCommentGuard + "\n");
 
                 conandataWriter.Write("requirements:\n");
+
+                conandataWriter.Close();
             }
         }
 
@@ -365,7 +384,10 @@ class ConanApplication(ConanFile):
 
                 var result = deserializer.Deserialize<Requirements>(string.Join("\n", conandataContents));
 
-                return result.requirements;
+                if (result.requirements != null)
+                {
+                    return result.requirements;
+                }
             }
             return new string[] { };
         }
@@ -378,14 +400,15 @@ class ConanApplication(ConanFile):
                 string[] requirements = GetConandataRequirements(projectDirectory);
                 if (!requirements.Contains(newRequirement))
                 {
-                    requirements.Append(newRequirement);
+                    var newRequirements = requirements.Append(newRequirement);
                     var conandata = File.CreateText(path);
                     conandata.Write(_modifyCommentGuard + "\n");
                     var serializer = new SerializerBuilder()
                         .WithNamingConvention(UnderscoredNamingConvention.Instance)
                         .Build();
-                    var yaml = serializer.Serialize(new Requirements(requirements));
+                    var yaml = serializer.Serialize(new Requirements(newRequirements.ToArray()));
                     conandata.Write(yaml);
+                    conandata.Close();
                 }
             }
         }
@@ -406,6 +429,7 @@ class ConanApplication(ConanFile):
                         .Build();
                     var yaml = serializer.Serialize(new Requirements(newRequirements));
                     conandata.Write(yaml);
+                    conandata.Close();
                 }
             }
         }
