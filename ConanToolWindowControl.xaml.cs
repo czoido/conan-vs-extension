@@ -64,7 +64,6 @@ namespace conan_vs_extension
     public partial class ConanToolWindowControl : UserControl
     {
         private ProjectConfigurationManager _manager;
-        private ConanProfilesManager _profiles_manager;
         private BuildEventsHandler _event_handler;
         private DTE _dte;
         private RootObject _jsonData;
@@ -214,10 +213,9 @@ namespace conan_vs_extension
 
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            Array activeSolutionProjects = _dte.ActiveSolutionProjects as Array;
-            Project activeProject = activeSolutionProjects.GetValue(0) as Project;
+            Project startupProject = ProjectConfigurationManager.GetStartupProject(_dte);
 
-            string projectFilePath = activeProject.FullName;
+            string projectFilePath = startupProject.FullName;
             string projectDirectory = Path.GetDirectoryName(projectFilePath);
 
             WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);

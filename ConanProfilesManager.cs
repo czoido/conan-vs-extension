@@ -65,7 +65,7 @@ namespace conan_vs_extension
             ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
-                if (project.Object is VCProject vcProject)
+                if (project != null && project.Object is VCProject vcProject)
                 {
                     string projectDirectory = System.IO.Path.GetDirectoryName(project.FullName);
                     string conanProjectDirectory = System.IO.Path.Combine(projectDirectory, ".conan");

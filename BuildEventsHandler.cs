@@ -9,30 +9,27 @@ namespace conan_vs_extension
     {
         private readonly DTE _dte;
         private readonly BuildEvents _buildEvents;
+        private ConanProfilesManager _profiles_manager;
 
         public BuildEventsHandler(DTE dte)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _dte = dte;
             _buildEvents = _dte.Events.BuildEvents;
-            
+            _profiles_manager = new ConanProfilesManager();
+
             // Subscribe to compilation events
-            _buildEvents.OnBuildBegin -= OnBuildBegin;
             _buildEvents.OnBuildDone += OnBuildDone;
             _buildEvents.OnBuildProjConfigBegin += OnBuildProjConfigBegin;
             _buildEvents.OnBuildProjConfigDone += OnBuildProjConfigDone;
         }
 
-        private void OnBuildBegin(vsBuildScope scope, vsBuildAction action)
-        {
-            var message = "OnBuildBegin";
-            System.Diagnostics.Debug.WriteLine(message);
-        }
-
         private void OnBuildProjConfigBegin(string Project, string ProjectConfig, string Platform, string SolutionConfig)
         {
-            var message = "OnBuildProjConfigBegin";
-            System.Diagnostics.Debug.WriteLine(message);
+            // here we generate profiles for all projects but we probably should only generate profiles for 
+            // the project marked as startup project
+            Project startupProject = ProjectConfigurationManager.GetStartupProject(_dte);
+            _profiles_manager.GenerateProfilesForProject(startupProject);
         }
 
         private void OnBuildProjConfigDone(string Project, string ProjectConfig, string Platform, string SolutionConfig, bool Success)
@@ -50,7 +47,6 @@ namespace conan_vs_extension
         public void Dispose()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            _buildEvents.OnBuildBegin -= OnBuildBegin;
             _buildEvents.OnBuildDone -= OnBuildDone;
             _buildEvents.OnBuildProjConfigBegin -= OnBuildProjConfigBegin;
             _buildEvents.OnBuildProjConfigDone -= OnBuildProjConfigDone;        }

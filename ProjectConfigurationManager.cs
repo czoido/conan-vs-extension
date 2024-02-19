@@ -62,5 +62,22 @@ namespace conan_vs_extension
                 }
             }
         }
+
+        public static Project GetStartupProject(DTE dte)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            SolutionBuild solutionBuild = (SolutionBuild)dte.Solution.SolutionBuild;
+            string startupProjectName = (string)((Array)solutionBuild.StartupProjects).GetValue(0);
+            foreach (Project project in dte.Solution.Projects)
+            {
+                if (project.UniqueName == startupProjectName)
+                {
+                    return project;
+                }
+            }
+
+            return null;
+        }
+
     }
 }
