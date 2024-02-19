@@ -44,7 +44,7 @@ namespace conan_vs_extension
             }
         }
 
-        public async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
+        private async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -63,6 +63,18 @@ namespace conan_vs_extension
             }
         }
 
+        public async Task SaveConanPrebuildEventsAllConfigAsync(VCProject vcProject)
+        {
+            string conanPath = GlobalSettings.ConanExecutablePath;
+            foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
+            {
+                string profileName = ConanProfilesManager.getProfileName(vcConfig);
+                string prebuildCommand = $"\"{conanPath}\" install . -pr:h=.conan/{profileName} --build=missing";
+                _ = SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
+            }
+
+        }
+
         public static Project GetStartupProject(DTE dte)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -71,6 +83,20 @@ namespace conan_vs_extension
             foreach (Project project in dte.Solution.Projects)
             {
                 if (project.UniqueName == startupProjectName)
+                {
+                    return project;
+                }
+            }
+
+            return null;
+        }
+
+        public static Project GetProjectByName(DTE dte, string name)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            foreach (Project project in dte.Solution.Projects)
+            {
+                if (project.UniqueName == name)
                 {
                     return project;
                 }

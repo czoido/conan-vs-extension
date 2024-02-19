@@ -16,9 +16,9 @@ namespace conan_vs_extension
         {
         }
 
-        private string getProfileName(string vcConfigName)
+        public static string getProfileName(VCConfiguration vcConfig)
         {
-            return vcConfigName.Replace("|", "_");
+            return vcConfig.Name.Replace("|", "_");
         }
 
         private string getConanArch(string platform)
@@ -76,7 +76,7 @@ namespace conan_vs_extension
 
                     foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
                     {
-                        string profileName = getProfileName(vcConfig.Name);
+                        string profileName = getProfileName(vcConfig);
                         string profilePath = System.IO.Path.Combine(conanProjectDirectory, profileName);
 
                         if (!File.Exists(profilePath))

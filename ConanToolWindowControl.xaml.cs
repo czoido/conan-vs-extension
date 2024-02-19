@@ -215,10 +215,16 @@ namespace conan_vs_extension
 
             Project startupProject = ProjectConfigurationManager.GetStartupProject(_dte);
 
-            string projectFilePath = startupProject.FullName;
-            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+            if (startupProject.Object is VCProject vcProject)
+            {
+                string projectFilePath = startupProject.FullName;
+                string projectDirectory = Path.GetDirectoryName(projectFilePath);
 
-            WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
+                WriteNecessaryConanGuardedFiles(projectDirectory);
+                WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
+
+                _ = _manager.SaveConanPrebuildEventsAllConfigAsync(vcProject);
+            }
         }
 
         private void RemoveButton_Click(object sender, RoutedEventArgs e)
@@ -465,25 +471,6 @@ class ConanApplication(ConanFile):
 
             ShowConfigurationDialog();
 
-            string conanPath = GlobalSettings.ConanExecutablePath;
-
-            foreach (Project project in _dte.Solution.Projects)
-            {
-                if (project.Object is VCProject vcProject)
-                {
-                    string projectFilePath = project.FullName;
-                    string projectDirectory = Path.GetDirectoryName(projectFilePath);
-                    string propsFilePath = Path.Combine(projectDirectory, "conandeps.props");
-                    string conanInstallCommand = $"\"{conanPath}\" install --requires=fmt/10.2.1 -g=MSBuildDeps -s=build_type=$(Configuration) --build=missing";
-
-                    WriteNecessaryConanGuardedFiles(projectDirectory);
-
-                    foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
-                    {
-                        _ = _manager.SaveConanPrebuildEventAsync(vcProject, vcConfig, conanInstallCommand);
-                    }
-                }
-            }
 
             foreach (Project project in _dte.Solution.Projects)
             {

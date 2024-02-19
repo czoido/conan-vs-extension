@@ -28,7 +28,7 @@ namespace conan_vs_extension
         {
             // here we generate profiles for all projects but we probably should only generate profiles for 
             // the project marked as startup project
-            Project startupProject = ProjectConfigurationManager.GetStartupProject(_dte);
+            Project startupProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
             _profiles_manager.GenerateProfilesForProject(startupProject);
         }
 
