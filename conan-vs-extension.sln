@@ -6,9 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "conan-vs-extension", "conan-vs-extension.csproj", "{72C8631C-34A2-487D-AB03-891CCE755E46}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementos de la solución", "Elementos de la solución", "{7B32C3F0-8461-4012-B696-3ECDA9F3176E}"
-	ProjectSection(SolutionItems) = preProject
-		ConanProfilesManager.cs = ConanProfilesManager.cs
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
