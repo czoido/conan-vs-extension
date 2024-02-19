@@ -65,6 +65,7 @@ namespace conan_vs_extension
     {
         private ProjectConfigurationManager _manager;
         private ConanProfilesManager _profiles_manager;
+        private BuildEventsHandler _event_handler;
         private DTE _dte;
         private RootObject _jsonData;
 
@@ -94,6 +95,7 @@ namespace conan_vs_extension
             {
                 throw new InvalidOperationException("Cannot access DTE service.");
             }
+            _event_handler = new BuildEventsHandler(_dte);
 
             await CopyJsonFileFromResourceIfNeededAsync();
             await LoadLibrariesFromJsonAsync();
