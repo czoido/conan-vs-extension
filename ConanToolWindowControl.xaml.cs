@@ -64,6 +64,7 @@ namespace conan_vs_extension
     public partial class ConanToolWindowControl : UserControl
     {
         private ProjectConfigurationManager _manager;
+        private ConanProfilesManager _profiles_manager;
         private DTE _dte;
         private RootObject _jsonData;
 
@@ -538,4 +539,5 @@ class ConanApplication(ConanFile):
             _ = UpdateJsonDataAsync();
         }
     }
+
 }
