@@ -180,8 +180,19 @@ namespace conan_vs_extension
             DescriptionTextBlock.Text = description ?? "No description available.";
             LicenseText.Text = licenses ?? "No description available.";
 
-            InstallButton.Visibility = Visibility.Visible;
-            RemoveButton.Visibility = Visibility.Collapsed;
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            Array activeSolutionProjects = _dte.ActiveSolutionProjects as Array;
+            Project activeProject = activeSolutionProjects.GetValue(0) as Project;
+
+            string projectFilePath = activeProject.FullName;
+            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+
+            var requirements = GetConandataRequirements(projectDirectory);
+            bool isInstalled = requirements.Any(e => e.StartsWith(name + "/"));
+
+            InstallButton.Visibility = isInstalled ? Visibility.Collapsed : Visibility.Visible;
+            RemoveButton.Visibility = isInstalled ? Visibility.Visible : Visibility.Collapsed;
 
             LibraryHeader.Visibility = Visibility.Visible;
             myWebBrowser.Visibility = Visibility.Visible;
