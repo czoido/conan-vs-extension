@@ -106,7 +106,7 @@ os=Windows
                         }
                     }
                 }
-                MessageBox.Show($"Generated profiles for actual project.", "Conan profiles generated", MessageBoxButton.OK, MessageBoxImage.Information);
+                //MessageBox.Show($"Generated profiles for actual project.", "Conan profiles generated", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

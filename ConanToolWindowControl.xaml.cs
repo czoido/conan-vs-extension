@@ -468,25 +468,7 @@ class ConanApplication(ConanFile):
         private void Configuration_Click(object sender, RoutedEventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-
             ShowConfigurationDialog();
-
-
-            foreach (Project project in _dte.Solution.Projects)
-            {
-                if (project.Object is VCProject vcProject)
-                {
-                    string projectFilePath = project.FullName;
-                    string projectDirectory = Path.GetDirectoryName(projectFilePath);
-                    string propsFilePath = Path.Combine(projectDirectory, "conandeps.props");
-
-                    foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
-                    {
-                        _ = _manager.InjectConanDepsAsync(vcProject, vcConfig, propsFilePath);
-                    }
-                }
-            }
-
             ToggleUIEnableState(true);
 
         }

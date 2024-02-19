@@ -4,7 +4,10 @@ using Microsoft.VisualStudio.VCProjectEngine;
 using System;
 using System.Collections;
 using System.IO;
+using System.Runtime.Remoting.Messaging;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using VSLangProj;
 
 namespace conan_vs_extension
 {
@@ -15,10 +18,12 @@ namespace conan_vs_extension
         {
         }
 
-        public async Task InjectConanDepsAsync(VCProject vcProject, VCConfiguration vcConfig, string propsFilePath)
+        public static async Task InjectConanDepsAsync(Project project, VCConfiguration vcConfig)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
+            string projectFilePath = project.FullName;
+            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+            string propsFilePath = Path.Combine(projectDirectory, "conan", "conandeps.props");
             if (File.Exists(propsFilePath))
             {
                 bool isAlreadyIncluded = false;
@@ -35,7 +40,7 @@ namespace conan_vs_extension
                 if (!isAlreadyIncluded)
                 {
                     vcConfig.AddPropertySheet(propsFilePath);
-                    vcProject.Save();
+                    project.Save();
                 }
             }
             else
@@ -105,5 +110,21 @@ namespace conan_vs_extension
             return null;
         }
 
+        public static VCConfiguration GetVCConfig(DTE dte, Project project, string ProjectConfig, string Platform)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (project.Object is VCProject vcProject)
+            {
+                foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
+                {
+                    VCPlatform vcPlatform = vcConfig.Platform as VCPlatform;
+                    if (vcConfig.ConfigurationName.Equals(ProjectConfig) 
+                        && vcPlatform.Name.Equals(Platform)) { 
+                        return vcConfig; 
+                    }  
+                }
+            }
+            return null;
+        }
     }
 }

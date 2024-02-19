@@ -1,7 +1,10 @@
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.VCProjectEngine;
 using System;
+using System.Collections;
+using System.IO;
 
 namespace conan_vs_extension
 {
@@ -34,8 +37,12 @@ namespace conan_vs_extension
 
         private void OnBuildProjConfigDone(string Project, string ProjectConfig, string Platform, string SolutionConfig, bool Success)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var message = "OnBuildProjConfigDone";
             System.Diagnostics.Debug.WriteLine(message);
+            Project startupProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
+            VCConfiguration config = ProjectConfigurationManager.GetVCConfig(_dte, startupProject, ProjectConfig, Platform);
+            _ = ProjectConfigurationManager.InjectConanDepsAsync(startupProject, config);
         }
 
         private void OnBuildDone(vsBuildScope Scope, vsBuildAction Action)
