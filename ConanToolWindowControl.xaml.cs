@@ -67,7 +67,7 @@ namespace conan_vs_extension
         private DTE _dte;
         private RootObject _jsonData;
 
-        private string _modifyCommentGuard = "# This is a Conan Plugin Managed File blah balh blhaaah";
+        private string _modifyCommentGuard = "# This file is managed by the Conan Visual Studio Extension, contents will be overwritten.\n# To keep your changes, remove these comment lines, but the plugin won't be able to modify your requirements";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConanToolWindowControl"/> class.
