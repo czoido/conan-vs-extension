@@ -70,6 +70,7 @@
   <ItemGroup>
     <None Include="Key.snk" />
     <EmbeddedResource Include="Resources\targets-data.json" />
+    <EmbeddedResource Include="Resources\conandeps.props" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

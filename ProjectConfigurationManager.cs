@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.VCProjectEngine;
 using System;
 using System.Collections;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,30 +19,64 @@ namespace conan_vs_extension
         {
         }
 
+        // this generates an empty conandeps, so we inject the file to all configs before doing the
+        // conan install
+        public static void SaveEmptyConandeps(Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            string propsFilePath = GetPropsFilePath(project);
+            string propsFileFolder = Path.GetDirectoryName(propsFilePath);
+
+            if (!File.Exists(propsFilePath))
+            {
+                if (!Directory.Exists(propsFileFolder))
+                {
+                    Directory.CreateDirectory(propsFileFolder);
+                }
+
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = "conan_vs_extension.Resources.conandeps.props";
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                using (var reader = new StreamReader(stream))
+                {
+                    string propsContent = reader.ReadToEnd();
+                    using (var writer = new StreamWriter(propsFilePath))
+                    {
+                        writer.Write(propsContent);
+                    }
+                }
+            }
+        }
+
+        public static async Task InjectConanDepsToAllConfigsAsync(Project project)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (project.Object is VCProject vcProject)
+            {
+                string propsFilePath = GetPropsFilePath(project);
+                if (File.Exists(propsFilePath))
+                {
+                    foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
+                    {
+                        InjectConanDepsToConfig(vcConfig, propsFilePath);
+                    }
+                    project.Save();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Properties file '{propsFilePath}' does not exist.");
+                }
+            }
+        }
+
         public static async Task InjectConanDepsAsync(Project project, VCConfiguration vcConfig)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            string projectFilePath = project.FullName;
-            string projectDirectory = Path.GetDirectoryName(projectFilePath);
-            string propsFilePath = Path.Combine(projectDirectory, "conan", "conandeps.props");
+            string propsFilePath = GetPropsFilePath(project);
             if (File.Exists(propsFilePath))
             {
-                bool isAlreadyIncluded = false;
-                IVCCollection propertySheets = vcConfig.PropertySheets as IVCCollection;
-                foreach (VCPropertySheet sheet in propertySheets)
-                {
-                    if (sheet.PropertySheetFile.Equals(propsFilePath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        isAlreadyIncluded = true;
-                        break;
-                    }
-                }
-
-                if (!isAlreadyIncluded)
-                {
-                    vcConfig.AddPropertySheet(propsFilePath);
-                    project.Save();
-                }
+                InjectConanDepsToConfig(vcConfig, propsFilePath);
+                project.Save();
             }
             else
             {
@@ -49,7 +84,33 @@ namespace conan_vs_extension
             }
         }
 
-        private async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
+        private static void InjectConanDepsToConfig(VCConfiguration vcConfig, string propsFilePath)
+        {
+            bool isAlreadyIncluded = false;
+            IVCCollection propertySheets = vcConfig.PropertySheets as IVCCollection;
+            foreach (VCPropertySheet sheet in propertySheets)
+            {
+                if (sheet.PropertySheetFile.Equals(propsFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    isAlreadyIncluded = true;
+                    break;
+                }
+            }
+            if (!isAlreadyIncluded)
+            {
+                vcConfig.AddPropertySheet(propsFilePath);
+            }
+        }
+        
+        private static string GetPropsFilePath(Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            string projectFilePath = project.FullName;
+            string projectDirectory = Path.GetDirectoryName(projectFilePath);
+            return Path.Combine(projectDirectory, "conan", "conandeps.props");
+        }
+
+        private static async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -68,14 +129,14 @@ namespace conan_vs_extension
             }
         }
 
-        public void SaveConanPrebuildEventsAllConfig(VCProject vcProject)
+        public static void SaveConanPrebuildEventsAllConfig(VCProject vcProject)
         {
             string conanPath = GlobalSettings.ConanExecutablePath;
             foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
             {
                 string profileName = ConanProfilesManager.getProfileName(vcConfig);
                 string prebuildCommand = $"\"{conanPath}\" install . -pr:h=.conan/{profileName} --build=missing";
-                _ = SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
+                _ = ProjectConfigurationManager.SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
             }
 
         }

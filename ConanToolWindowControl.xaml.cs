@@ -63,7 +63,6 @@ namespace conan_vs_extension
     /// </summary>
     public partial class ConanToolWindowControl : UserControl
     {
-        private ProjectConfigurationManager _manager;
         private DTE _dte;
         private RootObject _jsonData;
 
@@ -80,7 +79,6 @@ namespace conan_vs_extension
 
             ToggleUIEnableState(IsConanInitialized());
 
-            _manager = new ProjectConfigurationManager();
             _ = InitializeAsync();
         }
 
@@ -221,7 +219,9 @@ namespace conan_vs_extension
                 WriteNecessaryConanGuardedFiles(projectDirectory);
                 WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
 
-                _manager.SaveConanPrebuildEventsAllConfig(vcProject);
+                ProjectConfigurationManager.SaveConanPrebuildEventsAllConfig(vcProject);
+                ProjectConfigurationManager.SaveEmptyConandeps(startupProject);
+                _ = ProjectConfigurationManager.InjectConanDepsToAllConfigsAsync(startupProject);
             }
         }
 
