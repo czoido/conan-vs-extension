@@ -41,7 +41,7 @@ namespace conan_vs_extension
             var message = "OnBuildProjConfigDone";
             System.Diagnostics.Debug.WriteLine(message);
             Project startupProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
-            VCConfiguration config = ProjectConfigurationManager.GetVCConfig(_dte, startupProject, ProjectConfig, Platform);
+            VCConfiguration config = ProjectConfigurationManager.GetVCConfig(startupProject, ProjectConfig, Platform);
             // FIXME: the problem with this is that the first time you build
             // the build is started before this step finishes
             // maybe we can inject the dependency to the project via a prebuild event? 

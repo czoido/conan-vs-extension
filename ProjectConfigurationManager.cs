@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -60,7 +61,6 @@ namespace conan_vs_extension
                     {
                         InjectConanDepsToConfig(vcConfig, propsFilePath);
                     }
-                    project.Save();
                 }
                 else
                 {
@@ -136,15 +136,41 @@ namespace conan_vs_extension
             {
                 string profileName = ConanProfilesManager.getProfileName(vcConfig);
                 string prebuildCommand = $"\"{conanPath}\" install . -pr:h=.conan/{profileName} --build=missing";
-                _ = ProjectConfigurationManager.SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
+                _ = SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
             }
 
+        }
+
+        public static VCConfiguration GetActiveVCConfiguration(Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (project.Object is VCProject vcProject)
+            {
+                IVCCollection configurations = vcProject.Configurations as IVCCollection;
+                VCConfiguration activeConfiguration = null;
+
+                foreach (VCConfiguration config in configurations)
+                {
+                    string configName = config.ConfigurationName;
+                    VCPlatform vcPlatform = config.Platform as VCPlatform;
+                    if (config.ConfigurationName == project.ConfigurationManager.ActiveConfiguration.ConfigurationName &&
+                        vcPlatform.Name == project.ConfigurationManager.ActiveConfiguration.PlatformName)
+                    {
+                        activeConfiguration = config;
+                        break;
+                    }
+                }
+
+                return activeConfiguration;
+            }
+
+            return null;
         }
 
         public static Project GetStartupProject(DTE dte)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            SolutionBuild solutionBuild = (SolutionBuild)dte.Solution.SolutionBuild;
+            SolutionBuild solutionBuild = dte.Solution.SolutionBuild;
             string startupProjectName = (string)((Array)solutionBuild.StartupProjects).GetValue(0);
             foreach (Project project in dte.Solution.Projects)
             {
@@ -171,7 +197,7 @@ namespace conan_vs_extension
             return null;
         }
 
-        public static VCConfiguration GetVCConfig(DTE dte, Project project, string ProjectConfig, string Platform)
+        public static VCConfiguration GetVCConfig(Project project, string ProjectConfig, string Platform)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (project.Object is VCProject vcProject)
