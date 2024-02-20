@@ -68,7 +68,7 @@ namespace conan_vs_extension
             }
         }
 
-        public async Task SaveConanPrebuildEventsAllConfigAsync(VCProject vcProject)
+        public void SaveConanPrebuildEventsAllConfig(VCProject vcProject)
         {
             string conanPath = GlobalSettings.ConanExecutablePath;
             foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)

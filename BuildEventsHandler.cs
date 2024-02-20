@@ -37,11 +37,13 @@ namespace conan_vs_extension
 
         private void OnBuildProjConfigDone(string Project, string ProjectConfig, string Platform, string SolutionConfig, bool Success)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            //ThreadHelper.ThrowIfNotOnUIThread();
             var message = "OnBuildProjConfigDone";
             System.Diagnostics.Debug.WriteLine(message);
             Project startupProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
             VCConfiguration config = ProjectConfigurationManager.GetVCConfig(_dte, startupProject, ProjectConfig, Platform);
+            // FIXME: the problem with this is that the first time you build
+            // the build is started before this step finishes
             _ = ProjectConfigurationManager.InjectConanDepsAsync(startupProject, config);
         }
 

@@ -64,7 +64,6 @@ namespace conan_vs_extension
     public partial class ConanToolWindowControl : UserControl
     {
         private ProjectConfigurationManager _manager;
-        private BuildEventsHandler _event_handler;
         private DTE _dte;
         private RootObject _jsonData;
 
@@ -94,7 +93,6 @@ namespace conan_vs_extension
             {
                 throw new InvalidOperationException("Cannot access DTE service.");
             }
-            _event_handler = new BuildEventsHandler(_dte);
 
             await CopyJsonFileFromResourceIfNeededAsync();
             await LoadLibrariesFromJsonAsync();
@@ -223,7 +221,7 @@ namespace conan_vs_extension
                 WriteNecessaryConanGuardedFiles(projectDirectory);
                 WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
 
-                _ = _manager.SaveConanPrebuildEventsAllConfigAsync(vcProject);
+                _manager.SaveConanPrebuildEventsAllConfig(vcProject);
             }
         }
 
