@@ -220,8 +220,8 @@ namespace conan_vs_extension
                 WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
 
                 ProjectConfigurationManager.SaveConanPrebuildEventsAllConfig(vcProject);
-                ProjectConfigurationManager.SaveEmptyConandeps(startupProject);
-                _ = ProjectConfigurationManager.InjectConanDepsToAllConfigsAsync(startupProject);
+                //ProjectConfigurationManager.SaveEmptyConandeps(startupProject);
+                //_ = ProjectConfigurationManager.InjectConanDepsToAllConfigsAsync(startupProject);
             }
         }
 
