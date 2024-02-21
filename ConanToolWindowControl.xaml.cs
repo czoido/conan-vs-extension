@@ -219,9 +219,7 @@ namespace conan_vs_extension
                 WriteNecessaryConanGuardedFiles(projectDirectory);
                 WriteNewRequirement(projectDirectory, selectedLibrary + "/" + selectedVersion);
 
-                ProjectConfigurationManager.SaveConanPrebuildEventsAllConfig(vcProject);
-                //ProjectConfigurationManager.SaveEmptyConandeps(startupProject);
-                //_ = ProjectConfigurationManager.InjectConanDepsToAllConfigsAsync(startupProject);
+                ProjectConfigurationManager.SaveConanPrebuildEventsAllConfig(startupProject);
             }
         }
 

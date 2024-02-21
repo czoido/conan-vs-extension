@@ -20,35 +20,6 @@ namespace conan_vs_extension
         {
         }
 
-        // this generates an empty conandeps, so we inject the file to all configs before doing the
-        // conan install
-        public static void SaveEmptyConandeps(Project project)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            string propsFilePath = GetPropsFilePath(project);
-            string propsFileFolder = Path.GetDirectoryName(propsFilePath);
-
-            if (!File.Exists(propsFilePath))
-            {
-                if (!Directory.Exists(propsFileFolder))
-                {
-                    Directory.CreateDirectory(propsFileFolder);
-                }
-
-                var assembly = Assembly.GetExecutingAssembly();
-                var resourceName = "conan_vs_extension.Resources.conandeps.props";
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
-                using (var reader = new StreamReader(stream))
-                {
-                    string propsContent = reader.ReadToEnd();
-                    using (var writer = new StreamWriter(propsFilePath))
-                    {
-                        writer.Write(propsContent);
-                    }
-                }
-            }
-        }
-
         public static async Task InjectConanDepsToAllConfigsAsync(Project project)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -110,10 +81,11 @@ namespace conan_vs_extension
             return Path.Combine(projectDirectory, "conan", "conandeps.props");
         }
 
-        private static async Task SaveConanPrebuildEventAsync(VCProject vcProject, VCConfiguration vcConfig, string conanCommand)
+        private static async Task SaveConanPrebuildEventAsync(Project project, VCConfiguration vcConfig, string conanCommand)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            VCProject vcProject = project.Object as VCProject;
             IVCCollection tools = (IVCCollection)vcConfig.Tools;
             VCPreBuildEventTool preBuildTool = (VCPreBuildEventTool)tools.Item("VCPreBuildEventTool");
 
@@ -129,14 +101,16 @@ namespace conan_vs_extension
             }
         }
 
-        public static void SaveConanPrebuildEventsAllConfig(VCProject vcProject)
+        public static void SaveConanPrebuildEventsAllConfig(Project project)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             string conanPath = GlobalSettings.ConanExecutablePath;
+            VCProject vcProject = project.Object as VCProject;
             foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
             {
                 string profileName = ConanProfilesManager.getProfileName(vcConfig);
                 string prebuildCommand = $"\"{conanPath}\" install . -pr:h=.conan/{profileName} --build=missing";
-                _ = SaveConanPrebuildEventAsync(vcProject, vcConfig, prebuildCommand);
+                _ = SaveConanPrebuildEventAsync(project, vcConfig, prebuildCommand);
             }
 
         }
