@@ -81,7 +81,7 @@ namespace conan_vs_extension
             return Path.Combine(projectDirectory, "conan", "conandeps.props");
         }
 
-        public static async Task SaveConanPrebuildEventAsync(Project project, VCConfiguration vcConfig)
+        private static async Task SaveConanPrebuildEventAsync(Project project, VCConfiguration vcConfig)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
