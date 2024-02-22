@@ -81,21 +81,39 @@ namespace conan_vs_extension
             return Path.Combine(projectDirectory, "conan", "conandeps.props");
         }
 
-        private static async Task SaveConanPrebuildEventAsync(Project project, VCConfiguration vcConfig, string conanCommand)
+        private static async Task SaveConanPrebuildEventAsync(Project project, VCConfiguration vcConfig)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            string conan_script_name = "conan_install.ps1";
+
             VCProject vcProject = project.Object as VCProject;
-            IVCCollection tools = (IVCCollection)vcConfig.Tools;
-            VCPreBuildEventTool preBuildTool = (VCPreBuildEventTool)tools.Item("VCPreBuildEventTool");
+            IVCCollection tools = vcConfig.Tools as IVCCollection;
+            VCPreBuildEventTool preBuildTool = tools.Item("VCPreBuildEventTool") as VCPreBuildEventTool;
+
+            string projectDirectory = Path.GetDirectoryName(project.FullName);
+            string scriptPath = Path.Combine(projectDirectory, conan_script_name);
+
+            string conanPath = GlobalSettings.ConanExecutablePath;
+ 
+            string conanCommandContents = $@"
+        param(
+            [string]$buildType = '$(Configuration)',
+            [string]$arch = '$(Platform)'
+        )
+        Set-Location -Path '" + projectDirectory + @"'
+        & '" + conanPath + @"' install . --build=missing -pr:h=.conan/${buildType}_${arch} -pr:b=default
+        ";
+            
+            // TODO: should we guard this file too?
+            File.WriteAllText(scriptPath, conanCommandContents);
 
             if (preBuildTool != null)
             {
-                string currentPreBuildEvent = preBuildTool.CommandLine;
-                if (!currentPreBuildEvent.Contains("conan"))
+                string commandLine = $"powershell -ExecutionPolicy Bypass -File \"{scriptPath}\" $(Configuration) $(Platform)";
+                if (!preBuildTool.CommandLine.Contains(conan_script_name))
                 {
-                    // FIXME: better do this with a script file?
-                    preBuildTool.CommandLine = conanCommand + Environment.NewLine + currentPreBuildEvent;
+                    preBuildTool.CommandLine += Environment.NewLine + commandLine;
                     vcProject.Save();
                 }
             }
@@ -104,13 +122,10 @@ namespace conan_vs_extension
         public static void SaveConanPrebuildEventsAllConfig(Project project)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            string conanPath = GlobalSettings.ConanExecutablePath;
             VCProject vcProject = project.Object as VCProject;
             foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
             {
-                string profileName = ConanProfilesManager.getProfileName(vcConfig);
-                string prebuildCommand = $"\"{conanPath}\" install . -pr:h=.conan/{profileName} --build=missing";
-                _ = SaveConanPrebuildEventAsync(project, vcConfig, prebuildCommand);
+                _ = SaveConanPrebuildEventAsync(project, vcConfig);
             }
 
         }
