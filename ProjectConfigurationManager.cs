@@ -97,12 +97,12 @@ namespace conan_vs_extension
             string conanPath = GlobalSettings.ConanExecutablePath;
  
             string conanCommandContents = $@"
-        param(
-            [string]$conan_arguments = ''
-        )
-        Set-Location -Path '" + projectDirectory + @"'
-        & '" + conanPath + @"' install . ${conan_arguments}
-        ";
+param(
+    [string]$conan_arguments = ''
+)
+Set-Location -Path '" + projectDirectory + @"'
+& '" + conanPath + @"' install . ${conan_arguments}
+";
             
             // TODO: should we guard this file too?
             File.WriteAllText(scriptPath, conanCommandContents);
