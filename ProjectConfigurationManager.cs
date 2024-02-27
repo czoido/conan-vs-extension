@@ -92,7 +92,8 @@ namespace conan_vs_extension
             VCPreBuildEventTool preBuildTool = tools.Item("VCPreBuildEventTool") as VCPreBuildEventTool;
 
             string projectDirectory = Path.GetDirectoryName(project.FullName);
-            string scriptPath = Path.Combine(projectDirectory, conan_script_name);
+            string conanScriptDirectory = Path.Combine(projectDirectory, ".conan");
+            string scriptPath = Path.Combine(conanScriptDirectory, conan_script_name);
 
             string conanPath = GlobalSettings.ConanExecutablePath;
  
@@ -103,13 +104,14 @@ param(
 Set-Location -Path '" + projectDirectory + @"'
 & '" + conanPath + @"' install . ${conan_arguments}
 ";
-            
+
             // TODO: should we guard this file too?
+            Directory.CreateDirectory(conanScriptDirectory);
             File.WriteAllText(scriptPath, conanCommandContents);
 
             if (preBuildTool != null)
             {
-                string commandLine = $"powershell -ExecutionPolicy Bypass -File \"{scriptPath}\"  \"-pr:h=.conan/$(Configuration)_$(Platform) -pr:b=default --build=missing\"";
+                string commandLine = $"powershell -ExecutionPolicy Bypass -File \"$(ProjectDir).conan\\{conan_script_name}\"  \"-pr:h=.conan/$(Configuration)_$(Platform) -pr:b=default --build=missing\"";
                 if (!preBuildTool.CommandLine.Contains(conan_script_name))
                 {
                     preBuildTool.CommandLine += Environment.NewLine + commandLine;
