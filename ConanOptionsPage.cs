@@ -37,10 +37,6 @@ public class ConanOptionsPage : DialogPage
                 _useSystemConan = value;
                 if (_useSystemConan)
                 {
-                    _conanExecutablePath = "System";
-                }
-                else
-                {
                     _conanExecutablePath = "";
                 }
             }
