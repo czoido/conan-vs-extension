@@ -46,9 +46,13 @@ At any point, you can also use the refresh button (🔄) to update the list of a
 packages in [Conan Center](https://conan.io/center) and the view (👁️) button to check the
 requirements that have been added to the project.
 
-Now, if you initiate the build process for your project, the pre-build event will trigger Conan to install the packages and inject the necessary properties into the project, enabling Visual Studio to compile and link against those libraries.
+Now, if you initiate the build process for your project, the pre-build event will trigger
+Conan to install the packages and inject the necessary properties into the project,
+enabling Visual Studio to compile and link against those libraries.
 
-> ⚠️ **Warning**: The initial compilation might fail if Visual Studio does not have sufficient time to process the injected properties. If this happens, simply rebuild the project, and it should build successfully.
+> ⚠️ **Warning**: The initial compilation might fail if Visual Studio does not have
+> sufficient time to process the injected properties. If this happens, simply rebuild the
+> project, and it should build successfully.
 
 ## Installation
 
