@@ -10,7 +10,7 @@ available libraries, install, and use them without leaving Visual Studio.
 > **Note**
 > 
 > For a detailed explanation of how to use the extension, please visit [our documentation
-> page](https://docs.conan.io/2/).
+> page](https://docs.conan.io/2/integrations/visual_studio.html).
 
 After installing the Conan extension, you can access it from the “Conan” tool window in
 Visual Studio. To do so, go to **View > Other Windows > Conan C/C++ Package Manager**.
