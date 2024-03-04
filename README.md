@@ -50,6 +50,8 @@ Now, if you initiate the build process for your project, the pre-build event wil
 Conan to install the packages and inject the necessary properties into the project,
 enabling Visual Studio to compile and link against those libraries.
 
+![Build project](./.github/readme/build-project.png)
+
 > ⚠️ **Warning**: The initial compilation might fail if Visual Studio does not have
 > sufficient time to process the injected properties. If this happens, simply rebuild the
 > project, and it should build successfully.
