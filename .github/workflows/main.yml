@@ -2,9 +2,9 @@ name: Build conan-vs-extension
 
 on:
   push:
-    branches: [ develop2 ]
+    branches: [ testing ]
   pull_request:
-    branches: [ develop2 ]
+    branches: [ testing ]
 
 jobs:
   build:

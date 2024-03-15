@@ -9,17 +9,17 @@ namespace conan_vs_extension{
     {
         private static string _conanExecutablePath;
 
-        public static string ConanExecutablePath
+        public string ConanExecutablePath
         {
-            get
-            {
-                return _conanExecutablePath;
-            }
+            get => _conanExecutablePath;
             set
             {
-                _conanExecutablePath = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _conanExecutablePath = value;
+                    GlobalSettings.ConanExecutablePath = value;
+                }
             }
-
         }
     }
 }
