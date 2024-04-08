@@ -19,14 +19,14 @@ Visual Studio. To do so, go to **View > Other Windows > Conan C/C++ Package Mana
 
 #### Initial Configuration
 
-![Initial configuration](./.github/readme/tool-window-extension.png)
+![Initial configuration](https://raw.githubusercontent.com/conan-io/conan-vs-extension/develop2/.github/readme/tool-window-extension.png)
 
 Initially, you will need to configure the Conan executable to be used by the extension. By
 clicking on the ⚙️ (wheel) symbol from the extension's window, you can set up the path to
 the Conan client executable. You can either specify a custom path or choose to use the
 Conan client installed at the system level.
 
-![Select Conan executable](./.github/readme/select-conan-executable.png)
+![Select Conan executable](https://raw.githubusercontent.com/conan-io/conan-vs-extension/develop2/.github/readme/select-conan-executable.png)
 
 Once you have configured the Conan client, the extension is ready to use, and you can
 start adding libraries to your project.
@@ -37,7 +37,7 @@ Once configured, the library list in the Conan tool window becomes active, and y
 search for Conan packages using the search bar. Selecting a library will allow you to view
 its details, including available versions and integration options.
 
-![Select Conan executable](./.github/readme/search-packages.png)
+![Select Conan executable](https://raw.githubusercontent.com/conan-io/conan-vs-extension/develop2/.github/readme/search-packages.png)
 
 If you now click the `Add requirement` button, the extension will add a `conanfile.py` and
 a `conandata.yml` to your project with the necessary information to install the selected
@@ -51,7 +51,7 @@ Now, if you initiate the build process for your project, the pre-build event wil
 Conan to install the packages and inject the necessary properties into the project,
 enabling Visual Studio to compile and link against those libraries.
 
-![Build project](./.github/readme/build-project.png)
+![Build project](https://raw.githubusercontent.com/conan-io/conan-vs-extension/develop2/.github/readme/build-project.png)
 
 > ⚠️ **Warning**: The initial compilation might fail if Visual Studio does not have
 > sufficient time to process the injected properties. If this happens, simply rebuild the
