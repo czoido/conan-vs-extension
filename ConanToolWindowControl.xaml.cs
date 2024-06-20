@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +13,8 @@ using System.Reflection;
 using EnvDTE;
 using Microsoft.VisualStudio.Threading;
 using System.Windows.Navigation;
+using System.Windows.Media;
+using Microsoft.VisualStudio.PlatformUI;
 
 namespace conan_vs_extension
 {
@@ -58,8 +59,40 @@ namespace conan_vs_extension
             this.InitializeComponent();
             LibraryHeader.Visibility = Visibility.Collapsed;
 
+            this.Loaded += ConanToolWindowControl_Loaded;
+
             ToggleUIEnableState(IsConanInitialized());
             _ = InitializeAsync();
+        }
+
+        private void ConanToolWindowControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            VSColorTheme.ThemeChanged += OnThemeChanged;
+            UpdateTheme();
+        }
+
+        private void OnThemeChanged(ThemeChangedEventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            UpdateTheme();
+        }
+
+        public void UpdateTheme()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var currentThemeColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey);
+            var currentColor = Color.FromRgb(currentThemeColor.R, currentThemeColor.G, currentThemeColor.B);
+
+            UpdateForeground(currentColor);
+        }
+
+        public void UpdateForeground(Color color)
+        {
+            var brush = new SolidColorBrush(color);
+            this.Foreground = brush;
+            ShowPackagesCheckbox.Foreground = brush;
+            LibraryNameLabel.Foreground = brush;
         }
 
         private async Task InitializeAsync()
