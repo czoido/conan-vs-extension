@@ -15,7 +15,7 @@ namespace conan_vs_extension
             "# To keep your changes, remove these comment lines, but the plugin won't be able to modify your requirements"
         };
 
-        private static bool IsFileCommentGuarded(string path)
+        public static bool IsFileCommentGuarded(string path)
         {
             if (!File.Exists(path)) return false;
 
@@ -36,12 +36,13 @@ namespace conan_vs_extension
         public static string[] GetConandataRequirements(string projectDirectory)
         {
             string path = Path.Combine(projectDirectory, "conandata.yml");
-            if (IsFileCommentGuarded(path))
+            if (File.Exists(path))
             {
                 string[] conandataContents = File.ReadAllLines(path);
 
                 var deserializer = new DeserializerBuilder()
                     .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                    .IgnoreUnmatchedProperties()
                     .Build();
 
                 var result = deserializer.Deserialize<Requirements>(string.Join(Environment.NewLine, conandataContents));
@@ -54,10 +55,10 @@ namespace conan_vs_extension
             return new string[] { };
         }
 
-        private static void WriteConanfileIfNecessary(string projectDirectory)
+        public static bool ReCreateConanfile(string projectDirectory)
         {
             string conanfilePath = Path.Combine(projectDirectory, "conanfile.py");
-            if (!IsFileCommentGuarded(conanfilePath))
+            if (IsFileCommentGuarded(conanfilePath) || !File.Exists(conanfilePath))
             {
                 string conanfileContents = string.Join(Environment.NewLine,
                     _modifyCommentGuard.Concat(new string[]
@@ -84,26 +85,24 @@ namespace conan_vs_extension
                 );
 
                 File.WriteAllText(conanfilePath, conanfileContents);
+                return true;
             }
+            return false;
         }
 
-        private static void WriteConandataIfNecessary(string projectDirectory)
+        public static bool ReCreateConanData(string projectDirectory)
         {
             string conandataPath = Path.Combine(projectDirectory, "conandata.yml");
-            if (!IsFileCommentGuarded(conandataPath))
+            if (IsFileCommentGuarded(conandataPath) || !File.Exists(conandataPath))
             {
                 string conandataContents = string.Join(Environment.NewLine,
                     _modifyCommentGuard.Concat(new string[] { "requirements:" })
                 );
 
                 File.WriteAllText(conandataPath, conandataContents);
+                return true;
             }
-        }
-
-        public static void WriteNecessaryConanGuardedFiles(string projectDirectory)
-        {
-            WriteConanfileIfNecessary(projectDirectory);
-            WriteConandataIfNecessary(projectDirectory);
+            return false;
         }
 
         public static void WriteNewRequirement(string projectDirectory, string newRequirement)
