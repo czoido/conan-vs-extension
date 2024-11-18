@@ -36,7 +36,6 @@ namespace conan_vs_extension
 
             if (!IsConanEnabledForProject(Project))
             {
-                System.Diagnostics.Debug.WriteLine($"Skipping OnBuildProjConfigBegin for project {Project} - conandata.yml not found.");
                 return;
             }
 
@@ -55,7 +54,6 @@ namespace conan_vs_extension
 
             if (!IsConanEnabledForProject(Project))
             {
-                System.Diagnostics.Debug.WriteLine($"Skipping OnBuildProjConfigDone for project {Project} - conandata.yml not found.");
                 return;
             }
 
