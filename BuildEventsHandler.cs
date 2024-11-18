@@ -23,11 +23,23 @@ namespace conan_vs_extension
             _buildEvents.OnBuildProjConfigDone += OnBuildProjConfigDone;
         }
 
+        private bool IsConanEnabledForProject(string projectName)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var project = ProjectConfigurationManager.GetProjectByName(_dte, projectName);
+            return project != null && ProjectConfigurationManager.conandataFileExists(project);
+        }
+
         private void OnBuildProjConfigBegin(string Project, string ProjectConfig, string Platform, string SolutionConfig)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            // here we generate profiles for all projects but we probably should only generate profiles for 
-            // the project marked as startup project
+
+            if (!IsConanEnabledForProject(Project))
+            {
+                System.Diagnostics.Debug.WriteLine($"Skipping OnBuildProjConfigBegin for project {Project} - conandata.yml not found.");
+                return;
+            }
+
             Project invokedProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
             _profiles_manager.GenerateProfilesForProject(invokedProject);
 
@@ -40,8 +52,13 @@ namespace conan_vs_extension
         private void OnBuildProjConfigDone(string Project, string ProjectConfig, string Platform, string SolutionConfig, bool Success)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var message = "OnBuildProjConfigDone";
-            System.Diagnostics.Debug.WriteLine(message);
+
+            if (!IsConanEnabledForProject(Project))
+            {
+                System.Diagnostics.Debug.WriteLine($"Skipping OnBuildProjConfigDone for project {Project} - conandata.yml not found.");
+                return;
+            }
+
             Project invokedProject = ProjectConfigurationManager.GetProjectByName(_dte, Project);
             VCConfiguration config = ProjectConfigurationManager.GetVCConfig(invokedProject, ProjectConfig, Platform);
             // FIXME: the problem with this is that the first time you build
