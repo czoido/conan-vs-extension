@@ -20,7 +20,7 @@ namespace conan_vs_extension
         {
         }
 
-        static private bool conandataFileExists(Project project)
+        public static bool conandataFileExists(Project project)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             string projectDirectory = System.IO.Path.GetDirectoryName(project.FullName);
@@ -214,13 +214,14 @@ echo No changes detected, skipping conan install...
         public static async Task SaveConanPrebuildEventsAllConfigAsync(Project project)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            await GenerateConanInstallScriptAsync(project); // all the config share the same script
 
             if (!conandataFileExists(project))
             {
                 System.Diagnostics.Debug.WriteLine("conandata.yml not found. Skipping Conan PreBuildEvent.");
                 return;
             }
+
+            await GenerateConanInstallScriptAsync(project); // all the config share the same script
 
             VCProject vcProject = project.Object as VCProject;
             foreach (VCConfiguration vcConfig in (IEnumerable)vcProject.Configurations)
