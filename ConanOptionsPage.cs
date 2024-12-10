@@ -19,7 +19,7 @@ public class ConanOptionsPage : DialogPage
         get => _conanExecutablePath;
         set
         {
-            _conanExecutablePath = value.Trim();
+            _conanExecutablePath = value;
             GlobalSettings.ConanExecutablePath = value;
 
             if (value != "conan")
